@@ -7,6 +7,18 @@
 #include "polyhedron.h"
 #include <Magick++.h>
 
+template<class T>
+void assertVectorsEqual(const vector<T> &a, const vector<T> &b){
+    assert(std::equal(a.begin(), a.end(), b.begin()));
+}
+
+void TestGetCombCoeffs(){
+    assertVectorsEqual(getCombCoeffs(1), {1});
+    assertVectorsEqual(getCombCoeffs(2), {1, 1});
+    assertVectorsEqual(getCombCoeffs(3), {1, 2, 1});
+    assertVectorsEqual(getCombCoeffs(4), {1, 3, 3, 1});
+}
+
 void TestIsInsideSegment() {
     Segment<int> segm1 = {{0, 2},
                           {0, 5}};
@@ -76,6 +88,7 @@ void TestIsSimple() {
 }
 
 void RunTests() {
+    TestGetCombCoeffs();
     TestIsInsideSegment();
     TestIntersectSegment();
     TestIsConvex();

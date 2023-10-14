@@ -116,3 +116,11 @@ template<typename T>
 inline bool equal(const Vertex<T> &a, const Vertex<T> &b, T eps = 0.0) {
     return abs(a.x - b.x) < eps && abs(a.y - b.y) < eps && abs(a.z - b.z) < eps;
 }
+
+Vertex<double> convertToDoubleVertex(const Vertex<int> &a) {
+    return Vertex<double>{(double) a.x, (double) a.y, (double) a.z};
+}
+
+int roundToInt(double x) {
+    return int(round(x));
+}

@@ -3,6 +3,7 @@
 #include "draw.h"
 #include "segment.h"
 #include "bounding_box.h"
+#include <cmath>
 
 template<class T>
 T get(const vector<T> &vec, int i) {
@@ -53,6 +54,35 @@ intersectSegment(const Vertex<int> &a, const Vertex<int> &b, const Vertex<int> &
     return {0 <= t1 && t1 <= 1 && 0 <= t2 && t2 <= 1, CROSS};
 }
 
+
+tuple<double, double, PlaceType>
+intersectionPoint(const Vertex<int> &a, const Vertex<int> &b, const Vertex<int> &c, const Vertex<int> &d) {
+    int ab_cd = -area(b - a, d - c);
+    if (ab_cd == 0) {  // параллельны
+        if (area(d - c, c - a) != 0)
+            return {0, 0, PARALLEL};
+        // лежат на одной прямой
+        if (a.x == c.x) {
+            auto from_1 = min(a.y, b.y);
+            auto to_1 = max(a.y, b.y);
+            auto from_2 = min(c.y, d.y);
+            auto to_2 = max(c.y, d.y);
+            return {(from_2 - from_1) / (to_1 - from_1), 0, COLLINEAR};
+        } else {
+            auto from_1 = min(a.x, b.x);
+            auto to_1 = max(a.x, b.x);
+            auto from_2 = min(c.x, d.x);
+            auto to_2 = max(c.x, d.x);
+            return {(from_2 - from_1) / (to_1 - from_1), 0, COLLINEAR};
+        }
+    }
+
+    double t1 = static_cast<double>(area(d - c, c - a)) / ab_cd;
+    double t2 = static_cast<double>(area(b - a, c - a)) / ab_cd;
+
+    return {t1, t2, CROSS};
+}
+
 pair<bool, PlaceType>
 intersectSegment(const Segment<int> &first, const Segment<int> &second) {
     return intersectSegment(first.a, first.b, second.a, second.b);
@@ -66,15 +96,21 @@ class Polyhedron {
 private:
     vector<Segment<int>> segments;
 public:
-    explicit Polyhedron(vector<Vertex<int>> &points) {
+    explicit Polyhedron(const vector<Vertex<int>> &_points) {
+        auto points = _points;
+        if (area(points[1] - points[0], points[2] - points[0]) > 0)
+            std::reverse(points.begin(), points.end()); // do CW
+
         segments = vector<Segment<int>>(points.size());
         for (size_t i = 0; i < points.size() - 1; i++) {
             segments[i] = {points[i], points[i + 1]};
         }
         segments.back() = {points.back(), points[0]};
+
+        fixNormals(getCenter());
     };
 
-    void DrawBounds(Magick::Image &img, const Magick::Color &col) {
+    void drawBounds(Magick::Image &img, const Magick::Color &col) {
         if (segments.empty())
             return;
         for (auto &segm: segments)
@@ -119,11 +155,11 @@ public:
         return true;
     }
 
-    [[nodiscard]] bool IsInsideEvenOddRule(const Vertex<int> &v) const {
+    [[nodiscard]] bool isInsideEvenOddRule(const Vertex<int> &v) const {
         if (segments.size() <= 2)
             return false;
 
-        Vertex<int> end = v - Vertex<int>{3000, 0};
+        Vertex<int> end(0, v.y);
         Segment<int> line = {v, end};
 //        end = v + (end - v) * 100;
         int count = 0;
@@ -142,11 +178,11 @@ public:
         return true;
     }
 
-    [[nodiscard]] bool IsInsideNonZeroWinding(const Vertex<int> &v) const {
+    [[nodiscard]] bool isInsideNonZeroWinding(const Vertex<int> &v) const {
         if (segments.size() <= 2)
             return false;
 
-        Vertex<int> end = v - Vertex<int>{3000, 0};
+        Vertex<int> end(0, v.y);
         Vertex l = end - v;
         Segment<int> line = {v, end};
 //        end = v + (end - v) * 100;
@@ -166,30 +202,39 @@ public:
         return true;
     }
 
-    void FillWithEvenOddRule(Magick::Image &img, const Magick::Color &col) const {
+    void fillWithEvenOddRule(Magick::Image &img, const Magick::Color &col) const {
         if (segments.size() <= 2)
             return;
 
         BoundingBox<int> bbox(segments);
         for (int i = bbox.getXMin(); i < bbox.getXMax(); i++) {
             for (int j = bbox.getYMin(); j < bbox.getYMax(); j++) {
-                if (IsInsideEvenOddRule({i, j}))
+                if (isInsideEvenOddRule({i, j}))
                     img.pixelColor(i, j, col);
             }
         }
     }
 
-    void FillWithNonZeroWinding(Magick::Image &img, const Magick::Color &col) const {
+    void fillWithNonZeroWinding(Magick::Image &img, const Magick::Color &col) const {
         if (segments.size() <= 2)
             return;
 
         BoundingBox<int> bbox(segments);
         for (int i = bbox.getXMin(); i < bbox.getXMax(); i++) {
             for (int j = bbox.getYMin(); j < bbox.getYMax(); j++) {
-                if (IsInsideNonZeroWinding({i, j}))
+                if (isInsideNonZeroWinding({i, j}))
                     img.pixelColor(i, j, col);
             }
         }
+    }
+
+    [[nodiscard]] Vertex<int> getCenter() const {
+        Vertex<int> center;
+        for (auto &segm: segments) {
+            center += segm.a;
+        }
+
+        return center / segments.size();
     }
 
     void move(const Vertex<int> &shift) {
@@ -200,16 +245,46 @@ public:
     }
 
     void scale(double s) {
-        Vertex<int> center;
-        for (auto &segm: segments) {
-            center += segm.a;
-        }
-        center = center / segments.size();
+        Vertex<int> center = getCenter();
         for (auto &segm: segments) {
             segm.a = (segm.a - center) * s + center;
             segm.b = (segm.b - center) * s + center;
         }
     }
 
+    void fixNormals(const Vertex<int> &point) {
+        for (auto &segm: segments) {
+            if (segm.n * (point - segm.getCenter()) < 0)
+                segm.n = -segm.n;
+        }
+    }
+
+    [[nodiscard]] vector<Segment<int>> getSegments() const {
+        return segments;
+    }
+
     ~Polyhedron() = default;
 };
+
+Segment<int> cyrusBeckClipLine(const Segment<int> &line, const Polyhedron &pol) {
+    auto l = line.vec();
+    double t1 = 0, t2 = 1;
+    for (auto &segm: pol.getSegments()) {
+        auto ans = intersectionPoint(line.a, line.b, segm.a, segm.b);
+        if (get<2>(ans) == PlaceType::PARALLEL)
+            continue;
+        if (l * segm.n > 0) {
+            t1 = max(t1, get<0>(ans));
+        } else {
+            t2 = min(t2, get<0>(ans));
+        }
+    }
+
+    if (t1 > t2)
+        return Segment<int>{line.a, line.a};
+
+    Vertex<int> a = {roundToInt(line.a.x + l.x * t1), roundToInt(line.a.y + l.y * t1), roundToInt(line.a.y + l.y * t1)};
+    Vertex<int> b = {roundToInt(line.a.x + l.x * t2), roundToInt(line.a.y + l.y * t2), roundToInt(line.a.y + l.y * t2)};
+
+    return Segment<int>{a, b};
+}
