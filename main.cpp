@@ -7,6 +7,7 @@
 #include "polyhedron.h"
 #include <Magick++.h>
 #include "tests.h"
+#include "kuboid.h"
 
 const int DEPTH = (2 << MAGICKCORE_QUANTUM_DEPTH) - 1;
 
@@ -33,10 +34,10 @@ void saveImg(Magick::Image &img, const string &filename) {
 
 Polyhedron create_star() {
     vector<Vertex<int>> points = {{150, 200},
-                                  {450, 350},
+                                  {460, 350},
                                   {100, 350},
                                   {400, 200},
-                                  {250, 450}};
+                                  {250, 460}};
 
     return Polyhedron(points);
 }
@@ -138,12 +139,130 @@ void testDrawLine() {
     saveImg(img3, "test_line3.png");
 }
 
+void testShowProjection() {
+    Magick::Image img("500x500", "white");
+
+    vector<Vertex<int>> low_points = {
+            {10,  10,  10},
+            {10,  300, 10},
+            {300, 300, 10},
+            {300, 10,  10},
+    };
+
+    vector<Vertex<int>> high_points(low_points);
+    for (auto &v: high_points) {
+        v.z = 20;
+        v.x += 100;
+        v.y += 100;
+    }
+
+    vector<Segment<int>> segments(12);
+    for (int i = 0; i < 4; i++) {
+        segments[i] = Segment<int>(get(low_points, i), get(low_points, i + 1));
+        segments[i + 4] = Segment<int>(get(high_points, i), get(high_points, i + 1));
+        segments[i + 8] = Segment<int>(low_points[i], high_points[i]);
+    }
+
+//    showProjection(segments, 20, img, Black);
+    for (auto &segm: segments)
+        segm.draw(img, Black);
+
+    saveImg(img, "projection.png");
+}
+
+
+void testKuboid() {
+    Magick::Image img("1600x1200", "white");
+
+    vector<Vertex<int>> low_points = {
+            {400, 400, 40},
+            {400, 600, 40},
+            {600, 600, 40},
+            {600, 400, 40},
+    };
+
+    vector<Vertex<int>> high_points(low_points);
+    for (auto &v: high_points) {
+        v.z = 100;
+    }
+
+    array<array<Vertex<int>, 4>, 6> faces;
+    faces[4] = {low_points[0], low_points[1], low_points[2], low_points[3]};
+    faces[5] = {high_points[0], high_points[1], high_points[2], high_points[3]};
+    for (int i = 0; i < 4; i++) {
+        faces[i] = {low_points[i], low_points[(i + 1) % 4], high_points[(i + 1) % 4], high_points[i]};
+    }
+
+    Kuboid kuboid(faces);
+    kuboid.rotate(M_PI / 8, M_PI / 4, 0, {350, 350, 70});
+    for (int i = 0; i < 16; i++) {
+        kuboid.rotate(0, 0, M_PI / 8, {350, 350, 70});
+        kuboid.show(img, Blue);
+    }
+
+    saveImg(img, "projection.png");
+}
+
+void testWeilerAtherton1() {
+    Magick::Image img("300x300", "white");
+
+    vector<Vertex<int>> points = {{20,  20},
+                                  {280, 280},
+                                  {20,  280},
+                                  {280, 20}};
+    Polyhedron pol(points);
+    pol.drawBounds(img, Blue);
+
+    auto ans = pol.weilerAtherton();
+    ans.drawBounds(img, Red);
+
+    saveImg(img, "WeilerAtherton1.png");
+}
+
+void testWeilerAtherton2() {
+    Magick::Image img("500x500", "white");
+
+    Polyhedron pol = create_star();
+    pol.drawBounds(img, Blue);
+
+    auto ans = pol.weilerAtherton();
+    ans.drawBounds(img, Red);
+
+    saveImg(img, "WeilerAtherton2.png");
+}
+
+void testWeilerAtherton3() {
+    Magick::Image img("500x500", "white");
+
+    vector<Vertex<int>> points = {{20,  100}, // A
+                                  {170, 170}, // B
+                                  {320, 100}, // C
+                                  {350, 170}, // D
+                                  {210, 90}, // E
+                                  {30,  250}, // F
+                                  {300, 250}, // G
+                                  {100, 50}, // K
+    };
+    Polyhedron pol(points);
+    pol.drawBounds(img, Blue);
+
+    auto ans = pol.weilerAtherton();
+    ans.drawBounds(img, Red);
+
+    saveImg(img, "WeilerAtherton3.png");
+}
+
 int main() {
     RunTests();
 //    draw1();
 //    drawBezie();
 //    drawClip();
-    testDrawLine();
+//    testDrawLine();
 //    drawCircle();
+//    testShowProjection();
+//    testKuboid();
+    testWeilerAtherton1();
+    testWeilerAtherton2();
+    testWeilerAtherton3();
     return 0;
 }

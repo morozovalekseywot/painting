@@ -70,9 +70,25 @@ public:
         }
     }
 
+    void rotate(double alpha, double betta, double gamma, const Vertex<int> &center = {0, 0, 0}) {
+        double cos_a = cos(alpha), sin_a = sin(alpha);
+        double cos_b = cos(betta), sin_b = sin(betta);
+        double cos_g = cos(gamma), sin_g = sin(gamma);
+        Vertex<int> p = *this - center;
+        x = center.x + cos_b * cos_g * p.x - sin_g * cos_b * p.y + sin_b * p.z;
+        y = center.y + (sin_a * sin_b * cos_g + sin_g * cos_a) * p.x +
+            (-sin_a * sin_b * sin_g + cos_a * cos_g) * p.y - sin_a * cos_b * p.z;
+        z = center.z + (sin_a * sin_g - sin_b * cos_a * cos_g) * p.x +
+            (sin_a * cos_g + sin_b * sin_g * cos_a) * p.y + cos_a * cos_b * p.z;
+    }
+
     template<typename C>
     Vertex operator*(const C &a) const {
         return Vertex(x * a, y * a, z * a);
+    }
+
+    Vertex<int> multy(double c) const {
+        return Vertex(int(round(c * x)), int(round(c * y)), int(round(c * z)));
     }
 
     template<typename C>
@@ -87,6 +103,8 @@ public:
     Vertex operator-() const {
         return Vertex(-x, -y, -z);
     }
+
+    auto operator<=>(const Vertex &) const = default;
 
     ~Vertex() = default;
 };

@@ -7,7 +7,7 @@ class Segment {
 public:
     Vertex<T> a; /// начало отрезка
     Vertex<T> b; /// конец отрезка
-    Vertex<T> n; /// внутрення нормаль
+    Vertex<T> n; /// внутренняя нормаль
 
     Segment() = default;
 
@@ -27,6 +27,10 @@ public:
 
     [[nodiscard]] Vertex<T> getCenter() const {
         return (a + b) / 2;
+    }
+
+    [[nodiscard]] Vertex<T> getPoint(double t) const {
+        return a + (b - a) * t;
     }
 
     void scale(double s) {
