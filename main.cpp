@@ -170,9 +170,42 @@ void testShowProjection() {
     saveImg(img, "projection.png");
 }
 
+void testOnePointProjection() {
+    Magick::Image img("800x800", "white");
+
+    int a = 300;
+    int min_x = 200, min_y = 200, min_z = 100, max_z = 200;
+    vector<Vertex<int>> low_points = {
+            {min_x,     min_y,     min_z},
+            {min_x,     min_y + a, min_z},
+            {min_x + a, min_y + a, min_z},
+            {min_x + a, min_y,     min_z},
+    };
+
+    vector<Vertex<int>> high_points(low_points);
+    for (auto &v: high_points) {
+        v.z = max_z;
+    }
+
+    array<array<Vertex<int>, 4>, 6> faces;
+    faces[4] = {low_points[0], low_points[1], low_points[2], low_points[3]};
+    faces[5] = {high_points[0], high_points[1], high_points[2], high_points[3]};
+    for (int i = 0; i < 4; i++) {
+        faces[i] = {low_points[i], low_points[(i + 1) % 4], high_points[(i + 1) % 4], high_points[i]};
+    }
+
+    Kuboid kuboid(faces);
+//    kuboid.rotate(-M_PI / 4, M_PI / 4, 0, kuboid.getCenter());
+    kuboid.rotate(M_PI_4, 0, 0, kuboid.getCenter());
+//    kuboid.drawBounds(img, Black);
+//    kuboid.show(img, Red);
+    kuboid.onePointProjection(1.5e-3, img, Blue);
+
+    saveImg(img, "one_point_projection.png");
+}
 
 void testKuboid() {
-    Magick::Image img("1600x1200", "white");
+    Magick::Image img("700x700", "white");
 
     vector<Vertex<int>> low_points = {
             {400, 400, 40},
@@ -194,13 +227,54 @@ void testKuboid() {
     }
 
     Kuboid kuboid(faces);
-    kuboid.rotate(M_PI / 8, M_PI / 4, 0, {350, 350, 70});
-    for (int i = 0; i < 16; i++) {
-        kuboid.rotate(0, 0, M_PI / 8, {350, 350, 70});
-        kuboid.show(img, Blue);
-    }
+    kuboid.rotate(M_PI / 8, M_PI / 4, 0, kuboid.getCenter());
+//    kuboid.drawBounds(img, Black);
+    kuboid.show(img, Blue);
 
     saveImg(img, "projection.png");
+}
+
+void plotAnimation() {
+    int a = 300;
+    int min_x = 200, min_y = 200, min_z = 100, max_z = 200;
+    vector<Vertex<int>> low_points = {
+            {min_x,     min_y,     min_z},
+            {min_x + a, min_y,     min_z},
+            {min_x + a, min_y + a, min_z},
+            {min_x,     min_y + a, min_z},
+
+    };
+
+    vector<Vertex<int>> high_points(low_points);
+    for (auto &v: high_points) {
+        v.z = max_z;
+    }
+
+    array<array<Vertex<int>, 4>, 6> faces;
+    faces[4] = {low_points[0], low_points[1], low_points[2], low_points[3]};
+    faces[5] = {high_points[0], high_points[1], high_points[2], high_points[3]};
+    for (int i = 0; i < 4; i++) {
+        faces[i] = {low_points[i], low_points[(i + 1) % 4], high_points[(i + 1) % 4], high_points[i]};
+    }
+
+    Kuboid kuboid(faces);
+    kuboid.rotate(M_PI / 2, 0, 0, kuboid.getCenter());
+
+    int N = 200;
+    vector<Magick::Image> frames(N, Magick::Image("700x700", "white"));
+    auto center = kuboid.getCenter();
+    for (int i = 0; i < N; i++) {
+        kuboid.rotate(0, 2 * M_PI / N, 0, center);
+        kuboid.onePointProjection(1.3e-3, frames[i], Blue);
+    }
+
+    for(auto &frame: frames)
+    {
+        frame.flip();
+        frame.animationDelay(1);
+    }
+
+    Magick::writeImages(frames.begin(), frames.end(), "../images/anim.gif");
 }
 
 void testWeilerAtherton1() {
@@ -260,9 +334,11 @@ int main() {
 //    testDrawLine();
 //    drawCircle();
 //    testShowProjection();
-//    testKuboid();
-    testWeilerAtherton1();
-    testWeilerAtherton2();
-    testWeilerAtherton3();
+    testKuboid();
+//    testWeilerAtherton1();
+//    testWeilerAtherton2();
+//    testWeilerAtherton3();
+//    testOnePointProjection();
+//    plotAnimation();
     return 0;
 }

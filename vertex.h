@@ -82,6 +82,19 @@ public:
             (sin_a * cos_g + sin_b * sin_g * cos_a) * p.y + cos_a * cos_b * p.z;
     }
 
+    void rotateAboveAxes(double nx, double ny, double nz, double phi) {
+        double cos_phi = cos(phi), sin_phi = sin(phi);
+        double new_x = (cos_phi + nx * nx * (1 - cos_phi)) * x + (nx * ny * (1 - cos_phi) - nz * sin_phi) * y +
+                       (nx * nz * (1 - cos_phi) + ny * sin_phi) * z;
+        double new_y = (nx * ny * (1 - cos_phi) + nz * sin_phi) * x + (cos_phi + ny * ny * (1 - cos_phi)) * y +
+                       (ny * nz * (1 - cos_phi) - nx * sin_phi) * z;
+        double new_z = (nx * nz * (1 - cos_phi) - ny * sin_phi) * x + (ny * nz * (1 - cos_phi) + nx * sin_phi) * y +
+                       (cos_phi + nz * nz * (1 - cos_phi)) * z;
+        x = new_x;
+        y = new_y;
+        z = new_z;
+    }
+
     template<typename C>
     Vertex operator*(const C &a) const {
         return Vertex(x * a, y * a, z * a);
@@ -112,6 +125,11 @@ public:
 template<typename T>
 inline Vertex<T> cross(const Vertex<T> &a, const Vertex<T> &b) {
     return Vertex(a.y * b.z - a.z * b.y, -a.x * b.z + a.z * b.x, a.x * b.y - a.y * b.x);
+}
+
+template<typename T>
+inline Vertex<T> scalar(const Vertex<T> &a, const Vertex<T> &b) {
+    return Vertex(a.x * b.x, a.y * b.y, a.z * b.z);
 }
 
 template<typename T>

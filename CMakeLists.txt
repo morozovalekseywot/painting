@@ -4,7 +4,7 @@ project(painting)
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_FLAGS_RELEASE "-O3")
 
-find_package(ImageMagick COMPONENTS Magick++)
+find_package(ImageMagick COMPONENTS Magick++ MagickCore)
 
 add_executable(${CMAKE_PROJECT_NAME} main.cpp)
 
