@@ -85,7 +85,7 @@ public:
     /// Отображение без скрытых граней
     void show(Magick::Image &img, const Magick::Color &color) const {
         for (auto &face: faces) {
-            if (face.n.z >= 0)
+            if (face.n.z <= 0)
                 face.draw(img, color);
         }
     }

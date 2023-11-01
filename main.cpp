@@ -258,23 +258,29 @@ void plotAnimation() {
     }
 
     Kuboid kuboid(faces);
-    kuboid.rotate(M_PI / 2, 0, 0, kuboid.getCenter());
+    kuboid.rotate(1.5 * M_PI_4, 0, 0, kuboid.getCenter());
 
-    int N = 200;
-    vector<Magick::Image> frames(N, Magick::Image("700x700", "white"));
+    int N = 50;
+    vector<Magick::Image> frames1(N, Magick::Image("700x700", "white"));
+    vector<Magick::Image> frames2(N, Magick::Image("700x700", "white"));
     auto center = kuboid.getCenter();
     for (int i = 0; i < N; i++) {
         kuboid.rotate(0, 2 * M_PI / N, 0, center);
-        kuboid.onePointProjection(1.3e-3, frames[i], Blue);
+        kuboid.onePointProjection(1.3e-3, frames1[i], Blue);
+        kuboid.show(frames2[i], Blue);
     }
 
-    for(auto &frame: frames)
-    {
+    for (auto &frame: frames1) {
+        frame.flip();
+        frame.animationDelay(1);
+    }
+    for (auto &frame: frames2) {
         frame.flip();
         frame.animationDelay(1);
     }
 
-    Magick::writeImages(frames.begin(), frames.end(), "../images/anim.gif");
+    Magick::writeImages(frames1.begin(), frames1.end(), "../images/anim.gif");
+    Magick::writeImages(frames2.begin(), frames2.end(), "../images/anim2.gif");
 }
 
 void testWeilerAtherton1() {
@@ -334,11 +340,11 @@ int main() {
 //    testDrawLine();
 //    drawCircle();
 //    testShowProjection();
-    testKuboid();
+//    testKuboid();
 //    testWeilerAtherton1();
 //    testWeilerAtherton2();
 //    testWeilerAtherton3();
 //    testOnePointProjection();
-//    plotAnimation();
+    plotAnimation();
     return 0;
 }
