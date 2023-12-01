@@ -5,6 +5,7 @@
 #include "bounding_box.h"
 #include <cmath>
 #include <map>
+#include <algorithm>
 
 template<class T>
 T get(const vector<T> &vec, int i) {
@@ -68,17 +69,17 @@ intersectionPoint(const Vertex<int> &a, const Vertex<int> &b, const Vertex<int> 
             return {0, 0, PARALLEL};
         // лежат на одной прямой
         if (a.x == c.x) {
-            auto from_1 = min(a.y, b.y);
-            auto to_1 = max(a.y, b.y);
-            auto from_2 = min(c.y, d.y);
-            auto to_2 = max(c.y, d.y);
+            int from_1 = min(a.y, b.y);
+            int to_1 = max(a.y, b.y);
+            int from_2 = min(c.y, d.y);
+            int to_2 = max(c.y, d.y);
             return {(from_2 - from_1) / (to_1 - from_1), 0, COLLINEAR};
         } else {
-            auto from_1 = min(a.x, b.x);
-            auto to_1 = max(a.x, b.x);
-            auto from_2 = min(c.x, d.x);
-            auto to_2 = max(c.x, d.x);
-            return {(from_2 - from_1) / (to_2 - from_1), 0, COLLINEAR};
+            int from_1 = min(a.x, b.x);
+            int to_1 = max(a.x, b.x);
+            int from_2 = min(c.x, d.x);
+            int to_2 = max(c.x, d.x);
+            return {(from_2 - from_1) / (to_1 - from_1), 0, COLLINEAR};
         }
     }
 

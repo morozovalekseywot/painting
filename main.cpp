@@ -338,13 +338,13 @@ int main() {
 //    drawBezie();
 //    drawClip();
 //    testDrawLine();
-//    drawCircle();
+    drawCircle();
 //    testShowProjection();
 //    testKuboid();
 //    testWeilerAtherton1();
 //    testWeilerAtherton2();
 //    testWeilerAtherton3();
 //    testOnePointProjection();
-    plotAnimation();
+//    plotAnimation();
     return 0;
 }

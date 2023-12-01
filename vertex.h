@@ -33,9 +33,9 @@ public:
     }
 
     Vertex operator-=(const Vertex &a) {
-        x += a.x;
-        y += a.y;
-        z += a.z;
+        x -= a.x;
+        y -= a.y;
+        z -= a.z;
         return *this;
     }
 
